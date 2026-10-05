@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Let's Read</title>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font fallback for Londrina Solid -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Londrina+Solid:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        /* Local Font Face setup for uploaded LondrinaSolid-Regular */
+        @font-face {
+            font-family: 'Londrina Solid Local';
+            src: url('LondrinaSolid-Regular.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        :root {
+            /* Palette Variables */
+            --yellow: #fbf113;
+            --coral-red: #ff5151;
+            --bright-green: #50ff7f;
+            --cyan-blue: #32dbff;
+            --purple: #9747ff;
+            
+            --bg-color: #ffffff;
+            --card-bg: #ffffff;
+            --slot-box-bg: #32dbff;
+            --text-color: #000000;
+            --btn-gray: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 90vh;
+            user-select: none;
+        }
+
+        h1 {
+            /* Applied attached font 'Londrina Solid' */
+            font-family: 'Londrina Solid Local', 'Londrina Solid', 'Comic Sans MS', cursive, sans-serif;
+            color: var(--purple);
+            font-size: clamp(1.6rem, 7vw, 3.8rem);
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-shadow: 3px 3px 0px var(--cyan-blue);
+        }
+
+        /* Card Setup Containers */
+        .card-container {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 28px;
+            border: 4px solid var(--text-color);
+            box-shadow: 8px 8px 0px var(--text-color);
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            margin-bottom: 20px;
+            padding: 12px;
+            border: 3px solid var(--text-color);
+            border-radius: 16px;
+            font-family: inherit;
+            font-size: 1.2rem;
+            resize: none;
+            box-sizing: border-box;
+            outline: none;
+            background-color: #ffffff;
+            color: var(--text-color);
+        }
+
+        .cache-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin: -8px 0 16px;
+            color: #555555;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+
+        .cache-clear {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            border-radius: 12px;
+            border-width: 2px;
+            background: #eeeeee;
+            font-size: 1rem;
+        }
+
+        /* Game Area */
+        #game-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 35px 25px;
+            border-radius: 32px;
+            border: 4px solid var(--text-color);
+            box-shadow: 8px 8px 0px var(--text-color);
+            width: 100%;
+            max-width: 380px;
+            box-sizing: border-box;
+        }
+
+        /* Word-list progress bar */
+        .word-progress {
+            width: 100%;
+            margin-bottom: 22px;
+        }
+
+        .word-progress-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .word-progress-track {
+            width: 100%;
+            height: 16px;
+            background: #eeeeee;
+            border: 3px solid var(--text-color);
+            border-radius: 999px;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .word-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--bright-green);
+            border-radius: 999px;
+            transition: width 0.35s ease;
+        }
+
+        /* Round Timer Container with Circular Countdown Stroke Visualizer */
+        .timer-circle-wrap {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer-circle-wrap svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg); /* Start countdown progress at top (12 o'clock) */
+        }
+
+        .timer-circle-wrap circle.bg-track {
+            fill: #ffffff;
+            stroke: #f0f0f0;
+            stroke-width: 10;
+        }
+
+        .timer-circle-wrap circle.timer-line {
+            fill: none;
+            stroke: var(--coral-red);
+            stroke-width: 10;
+            stroke-linecap: round;
+            stroke-dasharray: 326.72; /* 2 * PI * r (r=52) */
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+        }
+
+        #timer {
+            position: relative;
+            z-index: 2;
+            font-size: 2.8rem;
+            font-weight: bold;
+            color: var(--yellow);
+            -webkit-text-stroke: 2px var(--text-color);
+            line-height: 1;
+        }
+
+        /* Slots Frame */
+        .slots-frame {
+            display: flex;
+            gap: clamp(4px, 1.8vw, 12px);
+            background: var(--slot-box-bg);
+            padding: 16px;
+            border-radius: 20px;
+            border: 3px solid var(--text-color);
+            margin-bottom: 30px;
+            width: 100%;
+            justify-content: center;
+            box-sizing: border-box;
+            flex-wrap: nowrap;
+        }
+
+        .slot {
+            width: clamp(38px, 12vw, 80px);
+            min-width: 0;
+            flex: 1 1 0;
+            max-width: 80px;
+            height: clamp(62px, 16vw, 100px);
+            background: #ffffff;
+            border: 3px solid var(--text-color);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.8rem;
+            font-weight: bold;
+            color: var(--text-color);
+            overflow: hidden;
+        }
+
+        .blur-animate {
+            animation: blurText 0.1s infinite alternate;
+        }
+
+        @keyframes blurText {
+            0% { filter: blur(0px); transform: translateY(-2px); }
+            100% { filter: blur(4px); transform: translateY(2px); }
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button {
+            border: 3px solid var(--text-color);
+            border-radius: 50%;
+            width: 65px;
+            height: 65px;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+        }
+
+        button:active:not(:disabled) {
+            transform: scale(0.92);
+        }
+
+        .btn-start { 
+            background-color: var(--yellow); 
+            border-radius: 20px; 
+            width: 100%; 
+            height: 55px; 
+            color: var(--text-color);
+            font-size: 1.5rem;
+        }
+
+        .btn-correct { background-color: var(--btn-gray); }
+        .btn-correct.active { background-color: var(--bright-green); }
+
+        .btn-wrong { background-color: var(--btn-gray); }
+        .btn-wrong.active { background-color: var(--coral-red); color: #ffffff; }
+
+        button:disabled {
+            background-color: var(--btn-gray);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Score Display Area */
+        #score-container {
+            display: none;
+        }
+
+        .score-title {
+            font-family: 'Londrina Solid Local', 'Londrina Solid', 'Comic Sans MS', cursive, sans-serif;
+            font-size: 2.2rem;
+            color: var(--purple);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .score-percentage {
+            font-size: 4rem;
+            font-weight: bold;
+            color: var(--bright-green);
+            -webkit-text-stroke: 2px var(--text-color);
+            margin-bottom: 25px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Let's Read</h1>
+
+    <!-- Word Input Area -->
+    <div id="setup-container" class="card-container">
+        <textarea id="word-input" placeholder="Enter 2–6 letter words: cat, bed, tree, play, black, splash"></textarea>
+        <div class="cache-row">
+            <span id="cache-status" role="status"><i class="fa-solid fa-hard-drive"></i> Saved on this device</span>
+            <button class="cache-clear" type="button" onclick="clearLocalCache()" aria-label="Clear saved word list" title="Clear saved word list"><i class="fa-solid fa-trash-can"></i></button>
+        </div>
+        <button class="btn-start" onclick="startGame()"><i class="fa-solid fa-play"></i></button>
+    </div>
+
+    <!-- Slot Machine Screen -->
+    <div id="game-container">
+        <div class="word-progress" aria-label="Word list progress">
+            <div class="word-progress-label">
+                <span>Progress</span>
+                <span id="progress-text">Word 1 of 1</span>
+            </div>
+            <div class="word-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-track">
+                <div class="word-progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        <!-- Round Timer Visualizer -->
+        <div class="timer-circle-wrap">
+            <svg>
+                <circle class="bg-track" cx="60" cy="60" r="52"></circle>
+                <circle class="timer-line" id="timer-stroke" cx="60" cy="60" r="52"></circle>
+            </svg>
+            <div id="timer">7</div>
+        </div>
+        
+        <div class="slots-frame" id="slots-frame" aria-label="Word letters"></div>
+
+        <div class="controls">
+            <button class="btn-correct" id="btn-correct" onclick="handleAnswer(true)" disabled><i class="fa-solid fa-check"></i></button>
+            <button class="btn-wrong" id="btn-wrong" onclick="handleAnswer(false)" disabled><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    </div>
+
+    <!-- Final Score Display Screen -->
+    <div id="score-container" class="card-container">
+        <div class="score-title">Your Score</div>
+        <div class="score-percentage" id="score-text">0%</div>
+        <button class="btn-start" onclick="resetGame()"><i class="fa-solid fa-rotate-right"></i></button>
+    </div>
+
+    <script>
+        const AudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (AudioCtx.state === 'suspended') {
+                AudioCtx.resume();
+            }
+            const osc = AudioCtx.createOscillator();
+            const gain = AudioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(AudioCtx.destination);
+
+            const now = AudioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'shuffle') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(160 + Math.random() * 180, now);
+                gain.gain.setValueAtTime(0.04, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+                osc.start(now);
+                osc.stop(now + 0.06);
+            } else if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.setValueAtTime(130, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+        }
+
+        let wordSequence = [];
+        let currentIndex = 0;
+        let correctCount = 0;
+        let timerInterval = null;
+        let shuffleInterval = null;
+        let timeLeft = 7;
+        const totalDuration = 7;
+        const CIRCUMFERENCE = 326.72; // 2 * PI * 52
+        const alphabet = "abcdefghijklmnopqrstuvwxyz";
+
+        function updateCircleStroke(seconds) {
+            const stroke = document.getElementById('timer-stroke');
+            const offset = CIRCUMFERENCE - (seconds / totalDuration) * CIRCUMFERENCE;
+            stroke.style.strokeDashoffset = offset;
+        }
+
+        const WORD_CACHE_KEY = 'letsReadWordListCache_v1';
+
+        function setCacheStatus(message, isError = false) {
+            const status = document.getElementById('cache-status');
+            if (!status) return;
+            status.innerHTML = `<i class="fa-solid fa-hard-drive"></i> ${message}`;
+            status.style.color = isError ? 'var(--coral-red)' : '#555555';
+        }
+
+        function saveWordListToCache(value) {
+            try {
+                localStorage.setItem(WORD_CACHE_KEY, value);
+                setCacheStatus('Saved on this device');
+            } catch (error) {
+                setCacheStatus('Local saving unavailable in this browser', true);
+            }
+        }
+
+        function restoreWordListFromCache() {
+            const box = document.getElementById('word-input');
+            try {
+                const savedWords = localStorage.getItem(WORD_CACHE_KEY);
+                if (savedWords !== null) {
+                    box.value = savedWords;
+                    setCacheStatus('Restored saved word list');
+                } else {
+                    setCacheStatus('Saved on this device');
+                }
+            } catch (error) {
+                setCacheStatus('Local saving unavailable in this browser', true);
+            }
+        }
+
+        function clearLocalCache() {
+            try {
+                localStorage.removeItem(WORD_CACHE_KEY);
+                document.getElementById('word-input').value = '';
+                setCacheStatus('Saved word list cleared');
+            } catch (error) {
+                setCacheStatus('Could not clear local cache', true);
+            }
+        }
+
+        function updateWordProgress(completedWords) {
+            const total = wordSequence.length || 1;
+            const percent = Math.max(0, Math.min(100, (completedWords / total) * 100));
+            document.getElementById('progress-fill').style.width = `${percent}%`;
+            document.getElementById('progress-text').textContent =
+                `Word ${Math.min(currentIndex + 1, total)} of ${total}`;
+            document.getElementById('progress-track').setAttribute('aria-valuenow', String(Math.round(percent)));
+        }
+
+        function startGame() {
+            playSound('click');
+            saveWordListToCache(document.getElementById('word-input').value);
+            const input = document.getElementById('word-input').value.toLowerCase();
+            const rawWords = [...new Set(
+                input.split(/[\s,;]+/)
+                    .map(w => w.replace(/[^a-z]/g, ''))
+                    .filter(w => w.length >= 2 && w.length <= 6)
+            )];
+
+            if (rawWords.length === 0) {
+                const box = document.getElementById('word-input');
+                box.placeholder = 'Enter words with 2–6 letters, e.g. cat, tree, play, black';
+                box.focus();
+                return;
+            }
+
+            wordSequence = rawWords;
+            currentIndex = 0;
+            correctCount = 0;
+
+            document.getElementById('setup-container').style.display = 'none';
+            document.getElementById('score-container').style.display = 'none';
+            document.getElementById('game-container').style.display = 'flex';
+
+            loadWord();
+        }
+
+        function loadWord() {
+             clearInterval(timerInterval);
+             clearInterval(shuffleInterval);
+
+             const btnCorrect = document.getElementById('btn-correct');
+             const btnWrong = document.getElementById('btn-wrong');
+
+             btnCorrect.disabled = true;
+             btnWrong.disabled = true;
+             btnCorrect.classList.remove('active');
+             btnWrong.classList.remove('active');
+
+             document.getElementById('timer').textContent = "7";
+             updateCircleStroke(7);
+
+             const currentWord = wordSequence[currentIndex];
+             const prevWord = currentIndex > 0 ? wordSequence[currentIndex - 1] : null;
+             const slotsFrame = document.getElementById('slots-frame');
+             const maxLetters = Math.max(...wordSequence.map(word => word.length));
+
+             // Align each word to the right so shared endings (e.g. -ay in
+             // play, say, clay, ray, pray) occupy the same slots.
+             // Shorter words get empty slots on the left.
+             const alignedWord = currentWord.padStart(maxLetters, ' ');
+             const prevAlignedWord = prevWord ? prevWord.padStart(maxLetters, ' ') : null;
+
+             slotsFrame.innerHTML = '';
+             for (let i = 0; i < maxLetters; i++) {
+                 const slot = document.createElement('div');
+                 slot.className = 'slot';
+                 slot.id = `slot-${i}`;
+                 slot.textContent = alignedWord[i] === ' ' ? '' : alignedWord[i];
+                 slotsFrame.appendChild(slot);
+             }
+
+             // Keep matching letters in aligned positions visible. Shuffle
+             // only positions that change; blank positions are allowed.
+             let shuffleIndices = [];
+             for (let i = 0; i < maxLetters; i++) {
+                 if (!prevAlignedWord || alignedWord[i] !== prevAlignedWord[i]) {
+                     shuffleIndices.push(i);
+                 }
+             }
+             if (shuffleIndices.length === 0) {
+                 shuffleIndices = [maxLetters - 1];
+             }
+
+             shuffleIndices.forEach(idx => {
+                 document.getElementById(`slot-${idx}`).classList.add('blur-animate');
+             });
+
+             const shuffleStartTime = Date.now();
+
+             shuffleInterval = setInterval(() => {
+                 shuffleIndices.forEach(idx => {
+                     const slot = document.getElementById(`slot-${idx}`);
+                     if (!slot) return;
+                     // Random letters animate in changing positions; the final
+                     // word may have empty slots for shorter words.
+                     slot.textContent = alphabet[Math.floor(Math.random() * alphabet.length)];
+                 });
+                 playSound('shuffle');
+
+                 if (Date.now() - shuffleStartTime >= 2000) {
+                     clearInterval(shuffleInterval);
+                     shuffleIndices.forEach(idx => {
+                         const slot = document.getElementById(`slot-${idx}`);
+                         if (!slot) return;
+                         slot.textContent = alignedWord[idx] === ' ' ? '' : alignedWord[idx];
+                         slot.classList.remove('blur-animate');
+                     });
+                     startTimer();
+                 }
+             }, 80);
+        }
+
+        function startTimer() {
+            timeLeft = 7;
+            document.getElementById('timer').textContent = timeLeft;
+            updateCircleStroke(timeLeft);
+
+            const btnCorrect = document.getElementById('btn-correct');
+            const btnWrong = document.getElementById('btn-wrong');
+            btnCorrect.disabled = false;
+            btnWrong.disabled = false;
+            btnCorrect.classList.add('active');
+            btnWrong.classList.add('active');
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                updateCircleStroke(timeLeft);
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleAnswer(false);
+                }
+            }, 1000);
+        }
+
+        function handleAnswer(isCorrect) {
+            clearInterval(timerInterval);
+            clearInterval(shuffleInterval);
+
+            if (isCorrect) {
+                correctCount++;
+                playSound('correct');
+            } else {
+                playSound('wrong');
+            }
+
+            currentIndex++;
+
+            if (currentIndex < wordSequence.length) {
+                loadWord();
+            } else {
+                showScore();
+            }
+        }
+
+        function showScore() {
+            document.getElementById('progress-fill').style.width = '100%';
+            document.getElementById('progress-text').textContent = `Completed ${wordSequence.length} words!`;
+            document.getElementById('progress-track').setAttribute('aria-valuenow', '100');
+            document.getElementById('game-container').style.display = 'none';
+            document.getElementById('score-container').style.display = 'block';
+
+            const percentage = Math.round((correctCount / wordSequence.length) * 100);
+            document.getElementById('score-text').textContent = `${percentage}%`;
+        }
+
+        function resetGame() {
+            playSound('click');
+            document.getElementById('score-container').style.display = 'none';
+            document.getElementById('setup-container').style.display = 'block';
+        }
+        // Keep the teacher's custom word list between page reloads.
+        document.addEventListener('DOMContentLoaded', () => {
+            restoreWordListFromCache();
+            const wordInput = document.getElementById('word-input');
+            wordInput.addEventListener('input', () => saveWordListToCache(wordInput.value));
+        });
+    </script>
+</body>
+</html>
